@@ -1,61 +1,44 @@
-const { connection } = require('../database/connection');
 const { StatusCodes } = require('http-status-codes');
 const { validationResult } = require('express-validator');
-
+const { UserService } = require('./service')
 class User {
-
     // Get all
-    static index = (req, res) => {
+    static index = async (req, res) => {
 
+        let result = await UserService.getAll();
+        return res.status(StatusCodes.OK).json({ message: 'success', data: result });
     }
-
     // Get by :id
     static show = async (req, res) => {
-        let userData = new Promise((resolve, reject) => {
-            connection.query('select * from `users` where id=?', [req.params.id], function (error, results, fields) {
-                if (error) return reject(error);
-                console.log("Line 2")
-                console.table(results);
-
-                resolve(results)
-            });
-        });
-
-        console.log("Line 4")
-        let result = await userData;
-        console.log(result)
-        console.log("Line 5")
-
-        console.log("Line 3")
-
+        let result = await UserService.getByid(req.params.id);
         return res.status(StatusCodes.OK).json({ message: 'success', data: result });
     }
 
     // Create a new user
-    static create = function (req, res) {
+    static create = async (req, res) => {
         const errors = validationResult(req);
-
-        connection.query('INSERT INTO `users` (`name`,`gender`,`dob`) VALUES (?,?,?)', [req.body.name, req.body.gender, req.body.dob], function (error, results, fields) {
-            if (error) throw error;
-
-            console.table(results)
-        })
-
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            return res.status(StatusCodes.BAD_REQUEST).json({ errors: errors.array() });
         }
+        let result = UserService.insert(req.body.name, req.body.gender, req.body.dob);
 
-        return res.status(201).json({ message: 'success' });
+        return res.status(StatusCodes.CREATED).json({ message: result });
     }
 
     // Update user by :id
     static update = function (req, res) {
-        // Create a new user
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ errors: errors.array() });
+        }
+        let result = UserService.update(req.params.id, req.body.name, req.body.gender, req.body.dob);
+        return res.status(StatusCodes.OK).json({ message: result });
     }
 
     // Delete user by :id
-    static destroy = function (req, res) {
-        // Create a new user
+    static destroy = async (req, res) => {
+        let result = await UserService.destroy(req.params.id);
+        return res.status(StatusCodes.OK).json({ message: 'success', data: result });
     }
 }
 

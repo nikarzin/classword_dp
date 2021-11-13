@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 const { connection } = require('./database/connection');
 const user = require('./user/route');
+const member = require('./member/route');
+require('dotenv').config();
 const {
     HOST,
     PORT,
@@ -10,20 +12,13 @@ const {
 app.use(express.json());
 
 app.use('/user', user.route)
-
+app.use('/member', member.route)
 connection.connect(function (err) {
     if (err) {
         console.error('error connecting: ' + err.stack);
         return;
     }
-
-    console.log('connected as id ' + connection.threadId);
-
-    connection.query('SELECT * FROM `users`', function (error, results, fields) {
-        if (error) throw error;
-
-        console.table(results)
-    })
+    console.log("Mysql connected succesfully");
 });
 
 app.listen(PORT, () => {
