@@ -1,6 +1,11 @@
 const { StatusCodes } = require('http-status-codes');
 const { validationResult } = require('express-validator');
-const { UserService } = require('./service')
+const bcrypt = require('bcrypt');
+const { UserService } = require('./service');
+let jwt = require('jsonwebtoken');
+require('dotenv').config();
+
+let {PRIVATE_KEY} = process.env;
 class User {
     // Get all
     static index = async (req, res) => {
@@ -12,6 +17,28 @@ class User {
     static show = async (req, res) => {
         let result = await UserService.getByid(req.params.id);
         return res.status(StatusCodes.OK).json({ message: 'success', data: result });
+    }
+
+    //signin
+
+    static signin = async (req, res) => {
+
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ errors: errors.array() });
+        }
+        let user = req.body.data[0];
+
+        let isMatch = await bcrypt.compareSync(req.body.password, user.password);
+            if(isMatch){
+                let token = jwt.sign({ username: user.username,name:user.name,gender:user.gender,dob:user.dob,id:user.id }, PRIVATE_KEY);
+                let verify = await jwt.verify(token, PRIVATE_KEY);
+
+                return res.status(StatusCodes.OK).send({"message":"Authorized sucesfully","token":token});
+            }else{
+                return res.status(StatusCodes.UNAUTHORIZED).send("Username or password is incorrect");
+            }
+        
     }
 
     // Create a new user

@@ -1,7 +1,7 @@
 const { connection } = require('../database/connection');
-
 class MemberService {
-    static getAll = async ()=> {
+
+    static getAll = async () => {
         let memberData = new Promise((resolve, reject) => {
             try {
                 connection.query('SELECT * FROM members', function (error, results, fields) {
@@ -63,7 +63,7 @@ class MemberService {
     static destroy = (id) => {
         connection.query(`DELETE FROM members WHERE id=${id}`, (error, data) => {
             if (error) throw error;
-            
+
         });
         return "deleted sucesfully";
     }

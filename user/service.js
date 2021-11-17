@@ -1,5 +1,18 @@
 const { connection } = require('../database/connection');
 class UserService {
+
+    static getByUsername = async (username) => {
+        let memberData = new Promise((resolve, reject) => {
+            connection.query('SELECT * FROM users WHERE username = ?', [username], function (error, results, fields) {
+                if (error) return reject(error);
+                resolve(results)
+            });
+        });
+        let result = await memberData;
+        return result;
+    }
+
+
     //service get all users 
     static getAll = async () => {
         let userData = new Promise((resolve, reject) => {
