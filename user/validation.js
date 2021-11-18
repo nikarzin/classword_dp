@@ -4,7 +4,7 @@ const create = [
     body('name')
         .notEmpty().withMessage('Field is required')
         .isLength({ min: 3 }).withMessage('Min lenght is 3 character'),
-    body('gender').isEmpty().isIn(['male', 'female']),
+    body('gender').isIn(['male', 'female']),
     body('dob').notEmpty().isDate()
 ];
 

@@ -1,11 +1,21 @@
 const { connection } = require('../database/connection');
 const { StatusCodes } = require('http-status-codes');
 const { validationResult } = require('express-validator');
+const bcrypt = require('bcrypt');
 
 class User {
+    // login user
+    static login = (req, res) => {
+
+    }
 
     // Get all
     static index = (req, res) => {
+
+    }
+
+    // Get auth user
+    static auth = (req, res) => {
 
     }
 
@@ -26,26 +36,39 @@ class User {
         console.log(result)
         console.log("Line 5")
 
+        delete result[0].password;
+
         console.log("Line 3")
 
         return res.status(StatusCodes.OK).json({ message: 'success', data: result });
     }
 
     // Create a new user
-    static create = function (req, res) {
+    static create = async function (req, res) {
         const errors = validationResult(req);
-
-        connection.query('INSERT INTO `users` (`name`,`gender`,`dob`) VALUES (?,?,?)', [req.body.name, req.body.gender, req.body.dob], function (error, results, fields) {
-            if (error) throw error;
-
-            console.table(results)
-        })
 
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
 
-        return res.status(201).json({ message: 'success' });
+        const passwordHash = bcrypt.hashSync(req.body.password, 5)
+
+        try {
+            let data = new Promise((resolve, reject) => {
+                connection.query('INSERT INTO `users` (`name`, `email`, `password`, `gender`, `dob`) VALUES (?,?,?,?,?)', [req.body.name, req.body.email, passwordHash, req.body.gender, req.body.dob], function (error, results, fields) {
+                    if (error) reject(error);
+
+                    console.table(results);
+                    return resolve(results)
+                });
+            });
+
+            let results = await data;
+
+            return res.status(201).json({ message: 'success', data: { id: results.insertId } });
+        } catch (error) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'error', data: error });
+        }
     }
 
     // Update user by :id
