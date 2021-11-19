@@ -1,12 +1,38 @@
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const { connection } = require('../database/connection');
 const { StatusCodes } = require('http-status-codes');
 const { validationResult } = require('express-validator');
-const bcrypt = require('bcrypt');
+const { UserService } = require('./service');
+
 
 class User {
     // login user
-    static login = (req, res) => {
+    static login = async (req, res) => {
+        let { email, password } = req.body;
 
+        let user = await UserService.getByEmail(email);
+
+        if (user.hasOwnProperty('id')) {
+            let isValid = bcrypt.compareSync(password, user.password);
+            if (isValid) {
+                let { JWT_SECRET } = process.env;
+                let token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '1h' });
+
+                return res.status(StatusCodes.OK).json({
+                    code: StatusCodes.OK,
+                    data: {
+                        token,
+                        expireIn: 3600
+                    }
+                })
+            }
+        }
+
+        return res.status(StatusCodes.UNAUTHORIZED).json({
+            code: StatusCodes.UNAUTHORIZED,
+            message: "Invalid login or password"
+        })
     }
 
     // Get all
@@ -21,26 +47,10 @@ class User {
 
     // Get by :id
     static show = async (req, res) => {
-        let userData = new Promise((resolve, reject) => {
-            connection.query('select * from `users` where id=?', [req.params.id], function (error, results, fields) {
-                if (error) return reject(error);
-                console.log("Line 2")
-                console.table(results);
-
-                resolve(results)
-            });
+        return res.status(StatusCodes.OK).json({
+            message: 'success',
+            data: await UserService.getByID(req.params.id)
         });
-
-        console.log("Line 4")
-        let result = await userData;
-        console.log(result)
-        console.log("Line 5")
-
-        delete result[0].password;
-
-        console.log("Line 3")
-
-        return res.status(StatusCodes.OK).json({ message: 'success', data: result });
     }
 
     // Create a new user
