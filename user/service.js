@@ -36,9 +36,8 @@ class UserService {
         return result;
     }
     //service insert user 
-    static insert = (name, gender, dob) => {
-
-        connection.query('INSERT INTO `users` (`name`,`gender`,`dob`) VALUES (?,?,?)', [name, gender, dob], function (error, results, fields) {
+    static insert = (name, gender, dob,username,password) => {
+        connection.query('INSERT INTO `users` (`name`,`gender`,`dob`,`username`,`password`) VALUES (?,?,?,?,?)', [name, gender, dob,username,password], function (error, results, fields) {
             if (error) throw error;
 
         });
