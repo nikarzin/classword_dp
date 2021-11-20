@@ -1,4 +1,5 @@
 const { connection } = require('../database/connection');
+
 class UserService {
 
     static getByUsername = async (username) => {
@@ -9,7 +10,7 @@ class UserService {
             });
         });
         let result = await userData;
-        return result;
+        return result[0];
     }
 
     //service get all users 
@@ -51,7 +52,11 @@ class UserService {
         });
         return "success";
     }
-
+    static setAvatar = (id, path) => {
+        connection.query(`UPDATE users SET avatarpath='${path}' WHERE id='${id}'`, function (error, results, fields) {
+            if (error) throw error;
+        });
+    }
     //service delete user
     static destroy = async (id) => {
         let userData = new Promise((resolve, reject) => {

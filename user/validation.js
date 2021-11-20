@@ -17,13 +17,14 @@ const update = [
 const signin = [
     body('username').notEmpty().withMessage("Username Field is required"),
     body("password").notEmpty().withMessage("Password field is required"),
-    body("username").custom(async (value, { req }) => {
+    body("username").custom(async (value) => {
         let data = await UserService.getByUsername(value);
-        if (data.hasOwnProperty('id')) {
+
+        if (data.hasOwnProperty("id")) {
             return true;
         }
         return Promise.reject('Username or password is invalid');
-    }),
+    })
 ]
 module.exports = {
     create,

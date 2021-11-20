@@ -3,6 +3,7 @@ const app = express();
 const { connection } = require('./database/connection');
 const user = require('./user/route');
 const member = require('./member/route');
+let fileUpload = require('express-fileupload');
 require('dotenv').config();
 const {
     HOST,
@@ -10,7 +11,7 @@ const {
 } = process.env;
 
 app.use(express.json());
-
+app.use(fileUpload());
 app.use('/user', user.route)
 app.use('/member', member.route)
 connection.connect(function (err) {

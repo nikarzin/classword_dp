@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { StatusCodes } = require('http-status-codes');
-
-module.exports.auth = (req, res, next) => {
+let {UserService} = require('../user/service');
+module.exports.auth = async (req, res, next) => {
     const { authorization, accept } = req.headers;
     let errorMessage = [];
     if (!authorization) {
@@ -24,7 +24,13 @@ module.exports.auth = (req, res, next) => {
         try {
             let { PRIVATE_KEY } = process.env;
             let data = jwt.verify(bearerToken, PRIVATE_KEY);
+            console.log(data);
             if (data && data.hasOwnProperty('id')) {
+                let DBUser = await UserService.getByUsername(data.username);
+                if(!DBUser.hasOwnProperty("id")){
+                    return res.status(StatusCodes.BAD_REQUEST).json({message:"A User of given token not found"});
+                }
+                req.userId = data.id;
                 return next();
             }
         }
