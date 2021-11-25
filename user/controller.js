@@ -4,9 +4,12 @@ const { connection } = require('../database/connection');
 const { StatusCodes } = require('http-status-codes');
 const { validationResult } = require('express-validator');
 const { UserService } = require('./service');
-
+const { Upload } = require('../common/service/upload');
 
 class User {
+    static UPLOAD_PATH = 'avatar';
+    static AVATAR_KEY_NAME = 'avatar';
+
     // login user
     static login = async (req, res) => {
         let { email, password } = req.body;
@@ -60,7 +63,7 @@ class User {
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
-
+        console.log(req.body);
         const passwordHash = bcrypt.hashSync(req.body.password, 5)
 
         try {
@@ -74,6 +77,17 @@ class User {
             });
 
             let results = await data;
+
+            let multerUpload = Upload.uploader(User.AVATAR_KEY_NAME, `${User.UPLOAD_PATH}/${results.insertId}`)
+
+            multerUpload(req, res, function (err) {
+                if (err) {
+                    console.log('Multer Error: ', err)
+                    return;
+                }
+
+                console.log(req.file.originalname)
+            });
 
             return res.status(201).json({ message: 'success', data: { id: results.insertId } });
         } catch (error) {
