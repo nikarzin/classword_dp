@@ -5,6 +5,8 @@ const { StatusCodes } = require('http-status-codes');
 const { validationResult } = require('express-validator');
 const { UserService } = require('./service');
 const { Upload } = require('../common/service/upload');
+const fs = require('fs');
+const path = require('path');
 
 class User {
     static UPLOAD_PATH = 'avatar';
@@ -58,41 +60,55 @@ class User {
 
     // Create a new user
     static create = async function (req, res) {
-        const errors = validationResult(req);
+        let multerUpload = Upload.uploader(User.AVATAR_KEY_NAME, `${User.UPLOAD_PATH}`)
 
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
-        console.log(req.body);
-        const passwordHash = bcrypt.hashSync(req.body.password, 5)
+        multerUpload(req, res, async function (err) {
+            if (err) {
+                console.log('Multer Error: ', err)
+                return;
+            }
 
-        try {
-            let data = new Promise((resolve, reject) => {
-                connection.query('INSERT INTO `users` (`name`, `email`, `password`, `gender`, `dob`) VALUES (?,?,?,?,?)', [req.body.name, req.body.email, passwordHash, req.body.gender, req.body.dob], function (error, results, fields) {
-                    if (error) reject(error);
+            const errors = validationResult(req);
 
-                    console.table(results);
-                    return resolve(results)
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ errors: errors.array() });
+            }
+
+            const passwordHash = bcrypt.hashSync(req.body.password, 5)
+            const fileName = req.file ? req.file.originalname : null;
+
+            try {
+                let data = new Promise((resolve, reject) => {
+                    connection.query('INSERT INTO `users` (`name`, `email`, `password`, `gender`, `dob`, `avatar`) VALUES (?,?,?,?,?,?)',
+                        [req.body.name, req.body.email, passwordHash, req.body.gender, req.body.dob, fileName],
+                        function (error, results, fields) {
+                            if (error) reject(error);
+
+                            console.table(results);
+                            return resolve(results)
+                        });
                 });
-            });
 
-            let results = await data;
+                let results = await data;
 
-            let multerUpload = Upload.uploader(User.AVATAR_KEY_NAME, `${User.UPLOAD_PATH}/${results.insertId}`)
+                if (fileName) {
+                    const oldPath = path.join(__dirname, `../public/images/${User.UPLOAD_PATH}`);
+                    const newPath = `${oldPath}/${results.insertId}`;
 
-            multerUpload(req, res, function (err) {
-                if (err) {
-                    console.log('Multer Error: ', err)
-                    return;
+                    if (!fs.existsSync(newPath)) {
+                        fs.mkdirSync(newPath)
+                    }
+
+                    fs.renameSync(`${oldPath}/${fileName}`, `${newPath}/${fileName}`)
                 }
 
-                console.log(req.file.originalname)
-            });
+                return res.status(201).json({ message: 'success', data: { id: results.insertId } });
+            } catch (error) {
+                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'error', data: error });
+            }
 
-            return res.status(201).json({ message: 'success', data: { id: results.insertId } });
-        } catch (error) {
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'error', data: error });
-        }
+            // console.log(req.files)
+        });
     }
 
     // Update user by :id

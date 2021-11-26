@@ -9,7 +9,7 @@ const {
 
 app.use(express.json());
 
-app.use('/user', user.route)
+app.use('/user', user.route);
 
 connection.connect(function (err) {
     if (err) {
